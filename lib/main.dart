@@ -1,11 +1,14 @@
 import 'package:alert/alert.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:web_socket_channel/io.dart';
+// import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
+  await Hive.openBox("uriBox");
   runApp(const MyApp());
 }
 
@@ -29,30 +32,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  TextEditingController uriController = TextEditingController();
+  Box box = Hive.box("uriBox");
   bool connnect = false;
   bool ledState = false;
-  TextEditingController uriController = TextEditingController();
 
+  // connect to WebSocket
   void connectSocket(String strUri) async {
-    print("connect to ws://${strUri}");
-    Alert(message: "Connect to ws://$strUri").show();
-    // final channel = WebSocketChannel.connect(Uri.parse(strUri));
-    // channel.stream.listen((event) {
-    //   channel.sink.add("received");
-    //   channel.sink.close(status.goingAway);
-    // });
+    try {
+      final channel = WebSocketChannel.connect(Uri.parse(strUri));
+      channel.stream.listen((event) {
+        channel.sink.add("received");
+        Alert(message: "Connect to ws://$strUri").show();
+        channel.sink.close(status.goingAway);
+        box.put("uri", strUri);
+      });
+    } catch (error) {
+      Alert(message: error.toString()).show();
+    }
   }
-
-  void writeData() {}
-  void readData() {}
-  void deleteData() {}
 
   @override
   void initState() {
-    try {
-      connectSocket("");
-    } catch (error) {
-      Alert(message: error.toString()).show();
+    if (box.get("uri") != null && box.get("uri") == "") {
+      () => uriController.text = box.get("uri");
     }
     super.initState();
   }
@@ -114,9 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   color: Colors.white),
                               textAlign: TextAlign.center,
                             ),
-                            onPressed: () {
-                              connectSocket(uriController.text);
-                            },
+                            onPressed: () => connectSocket(uriController.text),
                           ),
                         )
                       ],
