@@ -1,7 +1,9 @@
+import 'package:alert/alert.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // import 'package:web_socket_channel/io.dart';
-// import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
 
 void main() {
   runApp(const MyApp());
@@ -28,10 +30,25 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController uriController = TextEditingController();
-  // void connectSocket(Uri uri) {
-  //   final channel = WebSocketChannel.connect(uri);
 
-  // }
+  void connectSocket(String strUri) async {
+    final channel = WebSocketChannel.connect(Uri.parse(strUri));
+    channel.stream.listen((event) {
+      channel.sink.add("received");
+      channel.sink.close(status.goingAway);
+    });
+  }
+
+  @override
+  void initState() {
+    try {
+      connectSocket("");
+    } catch (error) {
+      Alert(message: error.toString()).show();
+    }
+    super.initState();
+  }
+
   bool connnect = false;
   @override
   Widget build(BuildContext context) {
@@ -67,6 +84,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                 hintText: "Enter ip Address",
                                 hintStyle: GoogleFonts.kanit(fontSize: 16),
                               ),
+                              onSubmitted: (value) {
+                                connectSocket(value);
+                              },
                             ),
                           ),
                           TextButton(
@@ -98,9 +118,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       // ! Action part
                       Column(
                         children: [
-                          const Text(
-                            "Status:",
-                            style: TextStyle(color: Colors.black),
+                          Text(
+                            connnect
+                                ? "Status: Connected"
+                                : "Status: Disconnect",
+                            style: const TextStyle(color: Colors.black),
                           ),
                           const SizedBox(
                             height: 20,

@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   web_socket_channel: ^2.4.0
   google_fonts: ^4.0.4
+  alert: ^2.0.1
+  hive: ^2.2.3
 
 dev_dependencies:
   flutter_test:
