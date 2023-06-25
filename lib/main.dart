@@ -34,13 +34,18 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController uriController = TextEditingController();
 
   void connectSocket(String strUri) async {
-    print("ws://${strUri}");
+    print("connect to ws://${strUri}");
+    Alert(message: "Connect to ws://$strUri").show();
     // final channel = WebSocketChannel.connect(Uri.parse(strUri));
     // channel.stream.listen((event) {
     //   channel.sink.add("received");
     //   channel.sink.close(status.goingAway);
     // });
   }
+
+  void writeData() {}
+  void readData() {}
+  void deleteData() {}
 
   @override
   void initState() {
@@ -68,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    // ! Setting part
+                    // * Address TextField Part
                     Column(
                       children: [
                         SizedBox(
@@ -79,8 +84,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(fontSize: 18),
                             decoration: InputDecoration(
-                              
-
                               hintText: "Enter ip Address",
                               hintStyle: GoogleFonts.inter(fontSize: 18),
                             ),
@@ -121,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     const SizedBox(
                       height: 50,
                     ),
-                    // ! Action part
+                    // * Controller Part
                     Column(
                       children: [
                         Text(
