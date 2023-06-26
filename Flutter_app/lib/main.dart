@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 // import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
+// import 'package:web_socket_channel/status.dart' as status;
 
 void main() async {
   await Hive.initFlutter();
@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
       channel = WebSocketChannel.connect(Uri.parse("ws://$strUri"));
       channel.stream.listen(
         (message) {
-          print(message);
+          Alert(message: message).show();
           setState(() {
             if (message == "connected") {
               // channel.sink.add("poweron");
@@ -58,13 +58,13 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         onDone: () {
           //if WebSocket is disconnected
-          print("Web socket is closed");
+          Alert(message: "Web socket is closed").show();
           setState(() {
             connected = false;
           });
         },
         onError: (error) {
-          print(error.toString());
+          Alert(message: error.toString()).show();
         },
       );
     } catch (error) {
@@ -76,14 +76,13 @@ class _MyHomePageState extends State<MyHomePage> {
     if (connected == true) {
       if (ledStatus == false && cmd != "poweron" && cmd != "poweroff") {
         Alert(message: "Send the valid command").show();
-        print("Send the valid command");
       } else {
         Alert(message: cmd).show();
         channel.sink.add(cmd); //sending Command to NodeMCU
       }
     } else {
       connectSocket();
-      print("Websocket is not connected.");
+      Alert(message: "Websocket is not connected.").show();
     }
   }
 
