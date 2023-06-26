@@ -34,29 +34,71 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController uriController = TextEditingController();
   Box box = Hive.box("uriBox");
-  bool connnect = false;
-  bool ledState = false;
+  late WebSocketChannel channel;
+  late bool connected;
+  late bool ledStatus;
 
   // connect to WebSocket
-  void connectSocket(String strUri) async {
+  void connectSocket({String strUri = "192.168.0.1:81"}) async {
     try {
-      final channel = WebSocketChannel.connect(Uri.parse(strUri));
-      channel.stream.listen((event) {
-        channel.sink.add("received");
-        Alert(message: "Connect to ws://$strUri").show();
-        channel.sink.close(status.goingAway);
-        box.put("uri", strUri);
-      });
+      channel = WebSocketChannel.connect(Uri.parse("ws://$strUri"));
+      channel.stream.listen(
+        (message) {
+          print(message);
+          setState(() {
+            if (message == "connected") {
+              // channel.sink.add("poweron");
+              connected = true; //message is "connected" from NodeMCU
+            } else if (message == "poweron") {
+              ledStatus = true;
+            } else if (message == "poweroff") {
+              ledStatus = false;
+            }
+          });
+        },
+        onDone: () {
+          //if WebSocket is disconnected
+          print("Web socket is closed");
+          setState(() {
+            connected = false;
+          });
+        },
+        onError: (error) {
+          print(error.toString());
+        },
+      );
     } catch (error) {
       Alert(message: error.toString()).show();
     }
   }
 
+  Future<void> sendcmd(String cmd) async {
+    if (connected == true) {
+      if (ledStatus == false && cmd != "poweron" && cmd != "poweroff") {
+        Alert(message: "Send the valid command").show();
+        print("Send the valid command");
+      } else {
+        Alert(message: cmd).show();
+        channel.sink.add(cmd); //sending Command to NodeMCU
+      }
+    } else {
+      connectSocket();
+      print("Websocket is not connected.");
+    }
+  }
+
   @override
   void initState() {
+    connected = false;
+    ledStatus = false;
     if (box.get("uri") != null && box.get("uri") == "") {
-      () => uriController.text = box.get("uri");
+      uriController.text = box.get("uri");
+      Future.delayed(Duration.zero, () async {
+        connectSocket(
+            strUri: box.get("uri")); //connect to WebSocket wth NodeMCU
+      });
     }
+    uriController.text = "192.168.0.1:81";
     super.initState();
   }
 
@@ -117,7 +159,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                   color: Colors.white),
                               textAlign: TextAlign.center,
                             ),
-                            onPressed: () => connectSocket(uriController.text),
+                            onPressed: () =>
+                                connectSocket(strUri: uriController.text),
                           ),
                         )
                       ],
@@ -129,7 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Column(
                       children: [
                         Text(
-                            connnect
+                            connected
                                 ? "Status: Connected"
                                 : "Status: Disconnect",
                             style: GoogleFonts.inter(fontSize: 18)),
@@ -147,11 +190,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                 if (states.contains(MaterialState.pressed)) {
                                   return Colors.blueGrey;
                                 }
-                                return ledState ? Colors.blue : Colors.blueGrey;
+                                return ledStatus
+                                    ? Colors.blue
+                                    : Colors.blueGrey;
                               }),
                             ),
                             child: Text(
-                              ledState ? "On" : "Off",
+                              ledStatus ? "On" : "Off",
                               style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -160,7 +205,17 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             onPressed: () {
                               setState(() {
-                                ledState = !ledState;
+                                if (ledStatus) {
+                                  //if ledStatus is true, then turn off the led
+                                  //if led is on, turn off
+                                  sendcmd("poweroff");
+                                  ledStatus = false;
+                                } else {
+                                  //if ledStatus is false, then turn on the led
+                                  //if led is off, turn on
+                                  sendcmd("poweron");
+                                  ledStatus = true;
+                                }
                               });
                             },
                           ),
